@@ -19,7 +19,7 @@ observe.js提供的API有on off add remove each extend。欲知具体用法，�
 
 使用jPlus.js，便可以在jQuery库中使用observe.js。
 
-用法非常方便，将修改上述的示例代码的第一句即可。
+用法非常方便，修改上述的示例代码的第一句即可。
 
 <code>var test = $({ background: '#000'});</code>
 
