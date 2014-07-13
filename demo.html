@@ -52,25 +52,77 @@ a:hover { color: #bf1a21; text-decoration: none; }
 			<li></li>
 		</ul>
 	</div>
-<script src="observe.min.js"></script>
+<script src="observe.js"></script>
 <script type="text/javascript">
 	$(function() {
 		var square = $('.square').find('li'),
 			len = square.length,
-			size;
+			size,
+			key = ['width', 'height'],
+			model = {
+				width: 100,
+				height: 100
+			};
 
-		size = $.observe({
-			i: 0
-		}, 'i', function(value) {
-			square.each(function(i) {
-				$(this).html(value + i);
-			});
+		size = observe(model);
+
+		size.add('borderWidth');
+
+		size.on(function(key, value) {
+			var o = {};
+			o[key] = value;
+			square.css(o);
 		});
 
-		size.i = 0;
-		setInterval(function() {
-			size.i += 1;
-		}, 200);
+		setTimeout(function() {
+			model.borderWidth = 10;
+			model.width = 200;
+			model.height = 220;
+			size.extend(model);
+
+			/*size.remove('width');*/
+			console.log(size);
+		}, 1000);
+
+
+		var test = observe({
+			background: '#000'
+		});
+
+		test.on('background', function(key, value) {
+			document.body.style[key] = value;
+		});
+
+		setTimeout(function() {
+			test.background = '#eaeaea';
+		}, 1000);
+
+
+		/*size.on({
+			width: function(key, value) {
+				var o = {};
+				o[key] = value;
+				square.css(o);
+				1;
+			},
+			height: function(key, value) {
+				var o = {};
+				o[key] = value;
+				square.css(o);
+				2;
+			}
+		});*/
+		size.each(function(key, value) {
+			console.log(key, value);
+		});
+
+		/*		size.off();
+		console.log(size);*/
+
+		/*		setInterval(function() {
+			size[key.reverse()[0]] += 10;
+			size.borderWidth = (len += 5);
+		}, 200);*/
 	});
 </script>
 </body>
