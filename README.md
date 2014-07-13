@@ -3,15 +3,15 @@ observe.js
 
 观察对象的属性，当它变化时，调用指定函数。
 
-var test = observe({ background: '#000'});
+<code>var test = observe({ background: '#000'});</code>
 
-test.on('background', function(key, value) {
+<code>test.on('background', function(key, value) {
   document.body.style[key] = value;
-}
+}</code>
 
-setTimeout(function() {
+<code>setTimeout(function() {
   test.background = '#f00';
-}, 1000);
+}, 1000);</code>
 
 document.body的背景颜色，将在一秒后变成#f00.
 
