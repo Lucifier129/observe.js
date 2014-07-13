@@ -1,80 +1,204 @@
 //Javascript Document
-;(function(window, undefined) {
+;(function(window, document, undefined) {
 	//严格模式
 	'use strict';
 	var head = document.getElementsByTagName('head')[0],
-		observeMethod = {
-			//在现代浏览器中，用Object.defineProperty实现属性侦听
-			//为了跨浏览器一致性，不直接侦听原对象，而是返回添加过侦听事件的新对象
-			//用__isVM属性来标示已被侦听过的对象
-			addSetter: function(obj, prop, callback) {
-				var value = obj[prop],
-					_obj,
-					key;
-				if (!('__hasSetter' in obj)) {
-					_obj = obj;
-					obj = {};
-					for (key in _obj) {
-						_obj.hasOwnProperty(key) && (obj[key] = _obj[key]);
-					}
-					obj.__hasSetter = true;
-				}
-				return Object.defineProperty(obj, prop, {
-					set: function(v) {
-						value = v;
-						callback.call(obj, v, prop);
-					},
-					get: function() {
-						return value;
-					}
-				});
-			},
-			//在IE系列的落后浏览器中，用dom元素的onpropertychange事件来实现
-			addEvent: function(obj, prop, callback) {
-				//对象的nodeName属性就是天然的__hasSetter标示符
-				if (!obj.nodeName) {
-					var _obj = obj,
-						key;
-					obj = document.createElement('obj');
-					head.appendChild(obj).parentNode.removeChild(obj);
-					//IE6删除DOM元素后，事件无法触发
-					navigator.userAgent.indexOf("MSIE 6.0") > 0 && head.appendChild(obj);
-					for (key in _obj) {
-						if (_obj.hasOwnProperty(key)) {
-							obj[key] = _obj[key];
+		observe,
+		method = {
+			//初始化，判断是否为现代浏览器
+			//将对象的属性拷贝到新对象上
+			//IE低版本浏览器，新对象为DOM对象
+			init: (function() {
+				var init;
+				if ('create' in Object) {
+					observe = addSetter;
+					addEvent = null;
+					init = function(obj) {
+						var _obj,
+							_old,
+							key;
+						//对象的__hasSetter属性拥有被侦听属性的同名属性
+						//该同名属性将保存该属性变化时的callback值
+						if (!('__hasSetter' in obj)) {
+							_old = {};
+							_obj = obj;
+							obj = Object.create(proto);
+							for (key in _obj) {
+								_obj.hasOwnProperty(key) && (obj[key] = _old[key] = _obj[key]);
+							}
+							obj._old = _old;
+							obj.__hasSetter = {};
 						}
-					}
-				}
-				obj.__cache = obj.__cache || {};
-				obj.__cache[prop] = callback;
-				if (!obj.onpropertychange) {
-					obj.onpropertychange = function(e) {
-						var key = (e || window.event).propertyName;
-						key in obj.__cache && obj.__cache[key].call(obj, obj[key], key);
+						return obj;
+					};
+				} else if ('onpropertychange' in head) {
+					observe = addEvent;
+					addSetter = null;
+					init = function(obj) {
+						var _obj,
+							_old,
+							key;
+						if (!('__hasSetter' in obj)) {
+							_old = {};
+							_obj = obj;
+							obj = document.createElement('obj');
+							head.appendChild(obj).parentNode.removeChild(obj);
+							//IE6删除DOM元素后，事件无法触发
+							navigator.userAgent.indexOf("MSIE 6.0") > 0 && head.appendChild(obj);
+							//拷贝参数对象中的属性
+							for (key in _obj) {
+								if (_obj.hasOwnProperty(key)) {
+									obj[key] = _old[key] = _obj[key];
+								}
+							}
+							//拷贝「原型」中的方法
+							for (key in proto) {
+								if (proto.hasOwnProperty(key)) {
+									obj[key] = proto[key];
+								}
+							}
+							obj._old = _old;
+							obj.__hasSetter = {};
+						}
+						return obj;
 					};
 				}
-				//返回的新对象是一个DOM对象
-				return obj;
+				return init;
+			})(),
+			//检查参数类型并返回类型值
+			type: function(obj) {
+				if (obj == null) {
+					return String(obj);
+				}
+				return typeof obj === "object" || typeof obj === "function" ?
+					class2type[core_toString.call(obj)] || "object" :
+					typeof obj;
 			}
-		};
-	function observe(obj, prop, callback) {
-		var modern = false;
-		try {
-			obj = observeMethod.addSetter(obj, prop, callback);
-			modern = true;
-		} catch (e) {
-			obj = observeMethod.addEvent(obj, prop, callback);
-		}
-		observe = modern ? observeMethod.addSetter : observeMethod.addEvent;
-	}
-	//测试一下，选中合适的方法
-	observe(observeMethod, 'test', function() {});
+		},
+		//被观察对象的原型
+		proto = {
+			//添加属性，_old属性与其同步更新
+			add: function(key, value) {
+				this[key] = this._old[key] = value || 'default value';
+			},
+			//删除属性，处理了兼容性
+			remove: (function() {
+				return observe === addSetter ? function(key) {
+					delete this[key];
+					delete this._old[key];
+					delete this.__hasSetter[key];
+					return this;
+				} : function(key) {
+					this.removeAttribute(key);
+					delete this._old[key];
+					delete this.__hasSetter[key];
+					return this;
+				};
+			})(),
+			//遍历，简单循环
+			each: function(callback) {
+				for (var key in this._old) {
+					callback.call(this[key], key, this[key]);
+				}
+				return this;
+			},
+			//合并，循环调用add方法
+			extend: function(src) {
+				for (var key in src) {
+					this.add(key, src[key]);
+				}
+				return this;
+			},
+			//添加属性侦听器，属性不存在则add一个
+			on: function() {
+				var args = arguments,
+					type = method.type(args[0]),
+					callback,
+					key;
+				if (args.length === 1) {
+					if (type === 'object') {
+						args = args[0];
+						for (key in args) {
+							callback = args[key];
+							if (typeof callback === 'function') {
+								if (!(key in this)) {
+									this.add(key);
+								}
+								observe(this, key, callback);
+							}
+						}
+					} else if (type === 'function') {
+						callback = args[0];
+						for (key in this._old) {
+							observe(this, key, callback);
+						}
+					}
+				} else if (args.length === 2) {
+					key = args[0];
+					callback = args[1];
+					if (type === 'string' && typeof callback === 'function') {
+						if (!(key in this)) {
+							this.add(key);
+						}
+						observe(this, key, callback);
+					}
+				}
+				return this;
+			},
+			//解除属性侦听器，如果不传参数，则解除所有
+			off: function() {
+				var args = arguments,
+					key,
+					len,
+					i;
+				if (!args.length) {
+					this.__hasSetter = {};
+				} else {
+					args = Array.prototype.slice.call(args);
+					for (i = 0, len = args.length; i < len; i += 1) {
+						key = args[i];
+						typeof key === 'string' && key in this.__hasSetter && delete this.__hasSetter[key];
+					}
+				}
+				return this;
+			}
+		},
+		class2type = {},
+		core_toString = class2type.toString;
+	"Boolean Number String Function Array Date RegExp Object Error".replace(/[^ ]+/g, function(name) {
+		class2type["[object " + name + "]"] = name.toLowerCase();
+	});
 
-	//如果页面jQuery库存在，则将observe挂靠在上面
-	//否则，observe成为全剧函数
-	if (jQuery) {
-		jQuery.observe = observe;
-	} else {
-		window.observe = observe;
+	//在现代浏览器中，用Object.defineProperty实现属性侦听
+	function addSetter(obj, prop, callback) {
+		if (prop in obj.__hasSetter) {
+			obj.__hasSetter[prop] = callback;
+			return obj;
+		}
+		var value = obj[prop];
+		obj.__hasSetter[prop] = callback;
+		return Object.defineProperty(obj, prop, {
+			set: function(v) {
+				value = v;
+				prop in obj.__hasSetter && obj.__hasSetter[prop].call(v, prop, v);
+			},
+			get: function() {
+				return value;
+			}
+		});
 	}
-})(window);
+	//在IE系列的落后浏览器中，用dom元素的onpropertychange事件来实现
+	function addEvent(obj, prop, callback) {
+		obj.__hasSetter[prop] = callback;
+		if (!obj.onpropertychange) {
+			var e = window.event;
+			obj.onpropertychange = function() {
+				var key = e.propertyName;
+				key in obj.__hasSetter && obj.__hasSetter[key].call(obj[key], key, obj[key]);
+			};
+		}
+		//返回的新对象是一个DOM对象
+		return obj;
+	}
+	window.observe = method.init;
+})(window, document);
