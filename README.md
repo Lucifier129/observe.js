@@ -7,7 +7,7 @@ observe.js
 
 <code>test.on('background', function(key, value) {
   document.body.style[key] = value;
-}</code>
+});</code>
 
 <code>setTimeout(function() {
   test.background = '#f00';
@@ -15,4 +15,4 @@ observe.js
 
 document.body的背景颜色，将在一秒后变成#f00.
 
-observe.js提供的API有on off add remove each extend。欲知具体用法，请看源码：）；
+observe.js提供的API有on off add remove each extend。欲知具体用法，可看DEMO页面和源码：)
