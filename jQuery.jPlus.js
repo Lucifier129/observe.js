@@ -188,11 +188,10 @@
 	}
 	//增强$函数，如果参数唯一，而且是朴素的js对象，则调用observe_init
 	//否则，调用jQuery的$函数
-	window.$ = (function($) {
-		var _$ = $;
-		return function() {
-			var args = arguments;
-			return args.length === 1 && _$.isPlainObject(args[0]) ? observe_init.apply(null, args) : _$.apply(null, args);
-		};
-	})($);
+	var _$ = $;
+	window.$ = function() {
+		var args = arguments;
+		return args.length === 1 && _$.isPlainObject(args[0]) ? observe_init.apply(null, args) : _$.apply(null, args);
+	};
+	_$.extend(true, window.$, _$);
 })(jQuery, window, document);
