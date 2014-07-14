@@ -26,3 +26,5 @@ observe.js提供的API有on off add remove each extend。欲知具体用法，�
 你没有看错。observe.js载入到jQuery中后，相当于为$函数提供了新的有意义的参数，即朴素的js对象。
 
 $函数的其他用法完全不变，仅仅是增加了侦听朴素js对象的属性变化-调用指定函数的功能。
+
+jQuery库兼容到多低版本的浏览器，observe.js也能兼容。ie5+亲测有效。
