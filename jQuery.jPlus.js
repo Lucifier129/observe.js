@@ -1,4 +1,9 @@
-//Javascript Document
+/*==================================================
+ Copyright 2014 Jade Gu
+ http://weibo.com/islucifier
+ Released under the MIT license
+ refresh.js 2014.7.16
+ ==================================================*/
 ;(function($, window, document, undefined) {
 	//严格模式
 	'use strict';
