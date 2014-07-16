@@ -166,7 +166,7 @@
 		return Object.defineProperty(obj, prop, {
 			set: function(v) {
 				value = v;
-				prop in obj.__hasSetter && obj.__hasSetter[prop].call(v, prop, v);
+				prop in obj.__hasSetter && obj.__hasSetter[prop].call(obj, prop, v);
 			},
 			get: function() {
 				return value;
@@ -180,7 +180,7 @@
 			var e = window.event;
 			obj.onpropertychange = function() {
 				var key = e.propertyName;
-				key in obj.__hasSetter && obj.__hasSetter[key].call(obj[key], key, obj[key]);
+				key in obj.__hasSetter && obj.__hasSetter[key].call(obj, key, obj[key]);
 			};
 		}
 		//返回的新对象是一个DOM对象
