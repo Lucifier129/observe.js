@@ -34,6 +34,7 @@
 				} else if ('onpropertychange' in head) {
 					observe = addEvent;
 					addSetter = null;
+					var isIE6 = navigator.userAgent.indexOf("MSIE 6.0") > 0;
 					init = function(obj) {
 						var _obj,
 							_old,
@@ -44,7 +45,7 @@
 							obj = document.createElement('obj');
 							head.appendChild(obj).parentNode.removeChild(obj);
 							//IE6删除DOM元素后，事件无法触发
-							navigator.userAgent.indexOf("MSIE 6.0") > 0 && head.appendChild(obj);
+							isIE6 && head.appendChild(obj);
 							//拷贝参数对象中的属性
 							for (key in _obj) {
 								if (_obj.hasOwnProperty(key)) {
@@ -98,7 +99,7 @@
 			//遍历，简单循环
 			each: function(callback) {
 				for (var key in this._old) {
-					callback.call(this[key], key, this[key]);
+					callback.call(this, key, this[key]);
 				}
 				return this;
 			},
@@ -180,7 +181,7 @@
 		return Object.defineProperty(obj, prop, {
 			set: function(v) {
 				value = v;
-				prop in obj.__hasSetter && obj.__hasSetter[prop].call(v, prop, v);
+				prop in obj.__hasSetter && obj.__hasSetter[prop].call(obj, prop, v);
 			},
 			get: function() {
 				return value;
@@ -194,7 +195,7 @@
 			var e = window.event;
 			obj.onpropertychange = function() {
 				var key = e.propertyName;
-				key in obj.__hasSetter && obj.__hasSetter[key].call(obj[key], key, obj[key]);
+				key in obj.__hasSetter && obj.__hasSetter[key].call(obj, key, obj[key]);
 			};
 		}
 		//返回的新对象是一个DOM对象
