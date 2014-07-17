@@ -52,7 +52,7 @@ a:hover { color: #bf1a21; text-decoration: none; }
 			<li></li>
 		</ul>
 	</div>
-<script src="observe.js"></script>
+<script src="observe.js" type="text/javascript"></script>
 <script type="text/javascript">
 	$(function() {
 		var square = $('.square').find('li'),
@@ -66,18 +66,35 @@ a:hover { color: #bf1a21; text-decoration: none; }
 
 		size = observe(model);
 
-		size.add('borderWidth');
-
-		size.on(function(key, value) {
+		size.add('borderWidth').on(function(key, value) {
 			var o = {};
 			o[key] = value;
 			square.css(o);
 		});
 
+		size.on('width', function(key, value) {
+			console.log('without namespace');
+		});
+
+		size.on('width.test', function() {
+			console.log('with namespace from width');
+		});
+
+		size.on('height.test', function() {
+			console.log('with namespace from height');
+		});
+
+		size.off('.test');
+
+		size.on('width.test', function() {
+			console.log('with namespace from height1');
+		});
+
 		setTimeout(function() {
 			model.borderWidth = 10;
 			model.width = 200;
-			model.height = 220;
+			model.height = 200;
+
 			size.extend(model);
 
 			/*size.remove('width');*/
