@@ -2,7 +2,7 @@
  Copyright 2014 Jade Gu
  http://weibo.com/islucifier
  Released under the MIT license
- refresh.js 2014.7.17
+ refresh.js 2014.7.16
  ==================================================*/
 ;(function(window, document, undefined) {
 	//严格模式
@@ -79,9 +79,6 @@
 				return typeof obj === "object" || typeof obj === "function" ?
 					class2type[core_toString.call(obj)] || "object" :
 					typeof obj;
-			},
-			getRandomStr: function() {
-				return Math.random().toString(36).substr(2);
 			}
 		},
 		//被观察对象的原型
@@ -89,7 +86,6 @@
 			//添加属性，_old属性与其同步更新
 			add: function(key, value) {
 				this[key] = this._old[key] = value || 'default value';
-				return this;
 			},
 			//删除属性，处理了兼容性
 			remove: (function() {
@@ -131,7 +127,7 @@
 						for (key in args) {
 							callback = args[key];
 							if (typeof callback === 'function') {
-								if (!(key in this) && !(key.split('.')[0] in this)) {
+								if (!(key in this)) {
 									this.add(key);
 								}
 								observe(this, key, callback);
@@ -147,7 +143,7 @@
 					key = args[0];
 					callback = args[1];
 					if (type === 'string' && typeof callback === 'function') {
-						if (!(key in this) && !(key.split('.')[0] in this)) {
+						if (!(key in this)) {
 							this.add(key);
 						}
 						observe(this, key, callback);
@@ -164,23 +160,10 @@
 				if (!args.length) {
 					this.__hasSetter = {};
 				} else {
+					args = Array.prototype.slice.call(args);
 					for (i = 0, len = args.length; i < len; i += 1) {
 						key = args[i];
-						if (typeof key === 'string') {
-							if (key.indexOf('.') !== -1) {
-								if (key.indexOf('.') === 0) {
-									key = key.replace(/\./g, '');
-									for (var prop in this.__hasSetter) {
-										key in this.__hasSetter[prop] && delete this.__hasSetter[prop][key];
-									}
-								} else {
-									key = key.split('.');
-									key[1] in this.__hasSetter[key[0]] && delete this.__hasSetter[key[0]][key[1]];
-								}
-							} else if (key in this.__hasSetter) {
-								delete this.__hasSetter[key];
-							}
-						}
+						typeof key === 'string' && key in this.__hasSetter && delete this.__hasSetter[key];
 					}
 				}
 				return this;
@@ -192,53 +175,36 @@
 		class2type["[object " + name + "]"] = name.toLowerCase();
 	});
 
-
 	//在现代浏览器中，用Object.defineProperty实现属性侦听
 	function addSetter(obj, prop, callback) {
-		var name = prop.split('.'),
-			value;
-		prop = name[0];
-		name = name[1];
-		if (!(prop in obj.__hasSetter)) {
-			value = obj[prop];
-			obj.__hasSetter[prop] = {};
-			Object.defineProperty(obj, prop, {
-				set: function(v) {
-					value = v;
-					if (prop in this.__hasSetter) {
-						for (var key in this.__hasSetter[prop]) {
-							this.__hasSetter[prop][key].call(this, prop, v);
-						}
-					}
-				},
-				get: function() {
-					return value;
-				}
-			});
+		if (prop in obj.__hasSetter) {
+			obj.__hasSetter[prop] = callback;
+			return obj;
 		}
-		obj.__hasSetter[prop][name || 'observe-' + method.getRandomStr()] = callback;
-		return obj;
-
+		var value = obj[prop];
+		obj.__hasSetter[prop] = callback;
+		return Object.defineProperty(obj, prop, {
+			set: function(v) {
+				value = v;
+				prop in obj.__hasSetter && obj.__hasSetter[prop].call(obj, prop, v);
+			},
+			get: function() {
+				return value;
+			}
+		});
 	}
 	//在IE系列的落后浏览器中，用dom元素的onpropertychange事件来实现
 	function addEvent(obj, prop, callback) {
-		var name = prop.split('.');
-		prop = name[0];
-		name = name[1];
-		prop in obj.__hasSetter || (obj.__hasSetter[prop] = {});
-		obj.__hasSetter[prop][name || 'observe-' + method.getRandomStr()] = callback;
+		obj.__hasSetter[prop] = callback;
 		if (!obj.onpropertychange) {
-			obj.onpropertychange = function(e) {
-				var prop = (e || window.event).propertyName;
-				if (prop in this.__hasSetter) {
-					for (var key in this.__hasSetter[prop]) {
-						this.__hasSetter[prop][key].call(this, prop, this[prop]);
-					}
-				}
+			var e = window.event;
+			obj.onpropertychange = function() {
+				var key = e.propertyName;
+				key in obj.__hasSetter && obj.__hasSetter[key].call(obj, key, obj[key]);
 			};
 		}
 		//返回的新对象是一个DOM对象
 		return obj;
 	}
 	window.observe = method.init;
-}(window, document));
+})(window, document);
