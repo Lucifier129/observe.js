@@ -1,18 +1,27 @@
-module	.exports = function(grunt) {
+module.exports = function(grunt) {
 	//grunt 初始化配置
 	grunt.initConfig({
+		pkg: grunt.file.readJSON('package.json'),
 		jshint: {
 			files: ['observe.js']
 		},
 		uglify: {
-			dist: {
-				src: ['observe.js'],
-				dest: 'observe.min.js'
+			options: {
+				banner: '/* <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+			},
+			min: {
+				files: [{
+					src: 'observe.js',
+					dest: 'observe.min.js'
+				}, {
+					src: 'jQuery.jPlus.js',
+					dest: 'jQuery.jPlus.min.js'
+				}]
 			}
 		},
 		watch: {
-		  files: '<%= uglify.dist.src %>',
-		  tasks: 'uglify'
+			files: ['<%= uglify.min.files[0].src %>', '<%= uglify.min.files[1].src %>'],
+			tasks: 'uglify'
 		}
 	});
 
