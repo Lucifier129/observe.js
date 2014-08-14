@@ -72,23 +72,6 @@ a:hover { color: #bf1a21; text-decoration: none; }
 			square.css(o);
 		});
 
-		size.on('width', function(key, value) {
-			console.log('without namespace');
-		});
-
-		size.on('width.test', function() {
-			console.log('with namespace from width');
-		});
-
-		size.on('height.test', function() {
-			console.log('with namespace from height');
-		});
-
-		size.off('.test');
-
-		size.on('width.test', function() {
-			console.log('with namespace from height1');
-		});
 
 		setTimeout(function() {
 			model.borderWidth = 10;
@@ -98,20 +81,6 @@ a:hover { color: #bf1a21; text-decoration: none; }
 			size.extend(model);
 
 			/*size.remove('width');*/
-			console.log(size);
-		}, 1000);
-
-
-		var test = observe({
-			background: '#000'
-		});
-
-		test.on('background', function(key, value) {
-			document.body.style[key] = value;
-		});
-
-		setTimeout(function() {
-			test.background = '#eaeaea';
 		}, 1000);
 
 
@@ -129,9 +98,6 @@ a:hover { color: #bf1a21; text-decoration: none; }
 				2;
 			}
 		});*/
-		size.each(function(key, value) {
-			console.log(key, value);
-		});
 
 		/*		size.off();
 		console.log(size);*/

@@ -2,93 +2,84 @@
  Copyright 2014 Jade Gu
  http://weibo.com/islucifier
  Released under the MIT license
- refresh.js 2014.7.17
+ observe.js 2014.7.17
  ==================================================*/
-;(function(window, document, undefined) {
+;
+(function(window, document, undefined) {
 	//严格模式
 	'use strict';
 	var head = document.getElementsByTagName('head')[0],
+		//初始化，判断是否为现代浏览器
+		//将对象的属性拷贝到新对象上
+		//IE低版本浏览器，新对象为DOM对象
 		observe,
-		method = {
-			//初始化，判断是否为现代浏览器
-			//将对象的属性拷贝到新对象上
-			//IE低版本浏览器，新对象为DOM对象
-			init: (function() {
-				var init;
-				if ('create' in Object) {
-					observe = addSetter;
-					addEvent = null;
-					init = function(obj) {
-						var _obj,
-							_old,
-							key;
-						//对象的__hasSetter属性拥有被侦听属性的同名属性
-						//该同名属性将保存该属性变化时的callback值
-						if (!('__hasSetter' in obj)) {
-							_old = {};
-							_obj = obj;
-							obj = Object.create(proto);
-							for (key in _obj) {
-								_obj.hasOwnProperty(key) && (obj[key] = _old[key] = _obj[key]);
-							}
-							obj._old = _old;
-							obj.__hasSetter = {};
+		observed = (function() {
+			if ('create' in Object && 'defineProperty' in Object) {
+				observe = addSetter;
+				addEvent = null;
+				return function(obj) {
+					var _obj,
+						_old,
+						key;
+					//对象的__hasSetter属性拥有被侦听属性的同名属性
+					//该同名属性将保存该属性变化时的callback值
+					if (!('__hasSetter' in obj)) {
+						_old = {};
+						_obj = obj;
+						obj = Object.create(proto);
+						for (key in _obj) {
+							_obj.hasOwnProperty(key) && (obj[key] = _old[key] = _obj[key]);
 						}
-						return obj;
-					};
-				} else if ('onpropertychange' in head) {
-					observe = addEvent;
-					addSetter = null;
-					var isIE6 = navigator.userAgent.indexOf("MSIE 6.0") > 0;
-					init = function(obj) {
-						var _obj,
-							_old,
-							key;
-						if (!('__hasSetter' in obj)) {
-							_old = {};
-							_obj = obj;
-							obj = document.createElement('obj');
-							head.appendChild(obj).parentNode.removeChild(obj);
-							//IE6删除DOM元素后，事件无法触发
-							isIE6 && head.appendChild(obj);
-							//拷贝参数对象中的属性
-							for (key in _obj) {
-								if (_obj.hasOwnProperty(key)) {
-									obj[key] = _old[key] = _obj[key];
-								}
+						obj._old = _old;
+						obj.__hasSetter = {};
+					}
+					return obj;
+				};
+			} else if ('onpropertychange' in head) {
+				observe = addEvent;
+				addSetter = null;
+				var model = head.appendChild(document.createElement('model'));
+				return function(obj) {
+					var _obj,
+						_old,
+						key;
+					if (!('__hasSetter' in obj)) {
+						_old = {};
+						_obj = obj;
+						obj = document.createElement('obj');
+						//拷贝参数对象中的属性
+						for (key in _obj) {
+							if (_obj.hasOwnProperty(key)) {
+								obj[key] = _old[key] = _obj[key];
 							}
-							//拷贝「原型」中的方法
-							for (key in proto) {
-								if (proto.hasOwnProperty(key)) {
-									obj[key] = proto[key];
-								}
-							}
-							obj._old = _old;
-							obj.__hasSetter = {};
 						}
-						return obj;
-					};
-				}
-				return init;
-			})(),
-			//检查参数类型并返回类型值
-			type: function(obj) {
-				if (obj == null) {
-					return String(obj);
-				}
-				return typeof obj === "object" || typeof obj === "function" ?
-					class2type[core_toString.call(obj)] || "object" :
-					typeof obj;
-			},
-			getRandomStr: function() {
-				return Math.random().toString(36).substr(2);
+						//拷贝「原型」中的方法
+						for (key in proto) {
+							if (proto.hasOwnProperty(key)) {
+								obj[key] = proto[key];
+							}
+						}
+						model.appendChild(obj)._old = _old;
+						obj.__hasSetter = {};
+					}
+					return obj;
+				};
 			}
+		}()),
+		//检查参数类型并返回类型值
+		getType = function(obj) {
+			if (obj == null) {
+				return String(obj);
+			}
+			return typeof obj === "object" || typeof obj === "function" ?
+				class2type[core_toString.call(obj)] || "object" :
+				typeof obj;
 		},
 		//被观察对象的原型
 		proto = {
 			//添加属性，_old属性与其同步更新
 			add: function(key, value) {
-				this[key] = this._old[key] = value || 'default value';
+				this[key] = this._old[key] = value || void 0;
 				return this;
 			},
 			//删除属性，处理了兼容性
@@ -115,14 +106,14 @@
 			//合并，循环调用add方法
 			extend: function(src) {
 				for (var key in src) {
-					this.add(key, src[key]);
+					src.hasOwnProperty(key) && this.add(key, src[key]);
 				}
 				return this;
 			},
 			//添加属性侦听器，属性不存在则add一个
 			on: function() {
 				var args = arguments,
-					type = method.type(args[0]),
+					type = getType(args[0]),
 					callback,
 					key;
 				if (args.length === 1) {
@@ -158,13 +149,13 @@
 			//解除属性侦听器，如果不传参数，则解除所有
 			off: function() {
 				var args = arguments,
+					len = args.length,
 					key,
-					len,
 					i;
-				if (!args.length) {
+				if (!len) {
 					this.__hasSetter = {};
 				} else {
-					for (i = 0, len = args.length; i < len; i += 1) {
+					for (i = 0; i < len; i += 1) {
 						key = args[i];
 						if (typeof key === 'string') {
 							if (key.indexOf('.') !== -1) {
@@ -188,6 +179,7 @@
 		},
 		class2type = {},
 		core_toString = class2type.toString;
+
 	"Boolean Number String Function Array Date RegExp Object Error".replace(/[^ ]+/g, function(name) {
 		class2type["[object " + name + "]"] = name.toLowerCase();
 	});
@@ -216,7 +208,7 @@
 				}
 			});
 		}
-		obj.__hasSetter[prop][name || 'observe-' + method.getRandomStr()] = callback;
+		obj.__hasSetter[prop][name || 'observe-' + Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2)] = callback;
 		return obj;
 
 	}
@@ -226,7 +218,7 @@
 		prop = name[0];
 		name = name[1];
 		prop in obj.__hasSetter || (obj.__hasSetter[prop] = {});
-		obj.__hasSetter[prop][name || 'observe-' + method.getRandomStr()] = callback;
+		obj.__hasSetter[prop][name || 'observe-' + Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2)] = callback;
 		if (!obj.onpropertychange) {
 			obj.onpropertychange = function(e) {
 				var prop = (e || window.event).propertyName;
@@ -240,5 +232,5 @@
 		//返回的新对象是一个DOM对象
 		return obj;
 	}
-	window.observe = method.init;
+	window.observe = observed;
 }(window, document));
