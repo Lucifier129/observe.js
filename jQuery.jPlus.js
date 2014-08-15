@@ -5,16 +5,17 @@
  jQuery.jPlus.js 2014.7.17
  ==================================================*/
 ;
-(function($, window, document, undefined) {
+(function(window, document, undefined) {
 	//严格模式
 	'use strict';
 	var head = document.getElementsByTagName('head')[0],
+		rnative = /\[native code\]/,
 		//初始化，判断是否为现代浏览器
 		//将对象的属性拷贝到新对象上
 		//IE低版本浏览器，新对象为DOM对象
 		observe,
 		observed = (function() {
-			if ('create' in Object && 'defineProperty' in Object) {
+			if ('create' in Object && rnative.test(Object.create) && 'defineProperty' in Object && rnative.test(Object.defineProperty)) {
 				observe = addSetter;
 				addEvent = null;
 				return function(obj) {
@@ -242,7 +243,7 @@
 			return _jQuery.apply(window, args);
 		}
 	}
-	jQuery.prototype = _jQuery.prototype;
 	window.$ = _jQuery.extend(true, window.jQuery, _jQuery);
+	jQuery.fn.init.prototype = jQuery.fn = jQuery.prototype = _jQuery.prototype;
 
 }(jQuery, window, document));
