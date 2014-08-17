@@ -80,7 +80,7 @@
 		proto = {
 			//添加属性，_old属性与其同步更新
 			add: function(key, value) {
-				this[key] = this._old[key] = value || void 0;
+				this[key] = this._old[key] = value || 1;
 				return this;
 			},
 			//删除属性，处理了兼容性
@@ -195,6 +195,7 @@
 		if (!(prop in obj.__hasSetter)) {
 			value = obj[prop];
 			obj.__hasSetter[prop] = {};
+			delete obj[prop];
 			Object.defineProperty(obj, prop, {
 				set: function(v) {
 					value = v;
