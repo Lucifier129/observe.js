@@ -39,7 +39,6 @@
 			} else if ('onpropertychange' in head) {
 				observe = addEvent;
 				addSetter = null;
-				var model = head.appendChild(document.createElement('model'));
 				return function(obj) {
 					var _obj,
 						_old,
@@ -47,7 +46,7 @@
 					if (!('__hasSetter' in obj)) {
 						_old = {};
 						_obj = obj;
-						obj = document.createElement('obj');
+						obj = document.createComment('obj');
 						//拷贝参数对象中的属性
 						for (key in _obj) {
 							if (_obj.hasOwnProperty(key)) {
@@ -60,7 +59,7 @@
 								obj[key] = proto[key];
 							}
 						}
-						model.appendChild(obj)._old = _old;
+						head.appendChild(obj)._old = _old;
 						obj.__hasSetter = {};
 					}
 					return obj;
