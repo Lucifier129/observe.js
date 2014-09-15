@@ -219,31 +219,6 @@
 		return obj;
 	}
 
-	var _jQuery = $;
-
-	window.jQuery = function() {
-		var args = arguments,
-			len = args.length;
-		if (jQuery.isPlainObject(args[0])) {
-			var obj = observed(args[0]);
-			if (args[1]) {
-				var type = jQuery.type(args[1]);
-				if (type === 'function') {
-					return obj.on(args[1]);
-				} else if (type === 'string') {
-					if (args[2] === undefined || typeof args[2] !== 'function') {
-						return obj;
-					}
-					return obj.on(arg[1], arg[2]);
-				}
-			} else {
-				return obj;
-			}
-		} else {
-			return _jQuery.apply(window, args);
-		}
-	}
-	window.$ = _jQuery.extend(true, window.jQuery, _jQuery);
-	jQuery.fn.init.prototype = jQuery.fn = jQuery.prototype = _jQuery.prototype;
+	$.observe = observed;
 
 }(jQuery, window, document));
