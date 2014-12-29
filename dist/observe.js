@@ -115,8 +115,8 @@ function randomStr(prefix) {
 	return prefix + Math.random().toString(36).substr(2)
 }
 
-function nextTick(fn) {
-	return setTimeout(fn, 0)
+var nextTick = typeof process !== 'undefined' && process.nextTick || function(fn) {
+	setTimeout(fn, 0)
 }
 
 function clone(obj) {
@@ -268,13 +268,13 @@ var observeProperty = function(obj, propName) {
 	var holding
 
 	function trigger() {
+		holding = false
 		each(obj.__events__[propName], function(callbacks) {
 			each(callbacks, function(callback) {
 				callback.call(obj, value, propName, oldValue)
 			})
 		})
 		oldValue = clone(value)
-		holding = false
 	}
 
 	defineProperty(obj, propName, {
@@ -515,6 +515,19 @@ var observer = {
 			}
 		}
 		return this.on(prop, wrapper)
+	},
+
+	hold: function(prop, total, callback) {
+		var that = this
+		var count = 0
+
+		function wrapper(data) {
+			if (++count === total) {
+				callback.call(that, data)
+				that.off(wrapper)
+			}
+		}
+		return this.on(prop, wrapper)
 	}
 }
 
@@ -541,7 +554,9 @@ function createObserver(source, setters) {
 
 createObserver.fn = observer
 
-if (typeof define === 'function' && (define.amd || define.cmd)) {
+if (typeof module !== 'undefined' && typeof exports === 'object') {
+	module.exports = createObserver
+} else if (typeof define === 'function' && (define.amd || define.cmd)) {
 	define(function() {
 		return createObserver
 	})
