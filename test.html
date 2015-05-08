@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>test</title>
+    </head>
+    <body>
+	<script type="text/javascript" src="observe.js"></script>
+	<script type="text/javascript">
+	(function() {
+		var obj = {
+			a: 1,
+			b: 2,
+			c: {
+				d: {
+					e: {
+						f: 1,
+						g: 2,
+						h: 3,
+						i: 4
+					}
+				}
+			}
+		}
+
+		var observer = observe.assignTo(Object.create(obj))
+		console.log(observer)
+
+		observer.on('a', function(value, prop) {
+			console.log(value, prop, this.get(prop))
+		})
+
+		observer.on('c.d.e.f', function(value, prop) {
+			console.log(value, prop, this.get(prop))
+		})
+
+		observer.a = '2'
+		observer.set('c.d.e.f', 5)
+		observer.c.d.e.f = 10
+
+
+	}())
+	</script>
+	</body>
+</html>

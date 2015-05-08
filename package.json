@@ -1,5 +1,8 @@
 {
 	"name": "observe.js",
+	"author": "Lucifier129",
+	"git": "git@github.com:Lucifier129/observe.js.git",
+	"main": "observe.js",
 	"version": "0.1.0",
 	"devDependencies": {
 		"grunt": "~0.4.0",
@@ -7,5 +10,6 @@
 		"grunt-contrib-concat": "~0.1.1",
 		"grunt-contrib-uglify": "~0.1.0",
 		"grunt-contrib-watch": "~0.1.4"
-	}
+	},
+	"license": "MIT"
 }
